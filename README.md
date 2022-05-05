@@ -1,8 +1,10 @@
 <img src="./coca.png" width="450px"></img>
 
-## CoCa - Pytorch (wip)
+## CoCa - Pytorch
 
 Implementation of <a href="https://arxiv.org/abs/2205.01917">CoCa, Contrastive Captioners are Image-Text Foundation Models</a>, in Pytorch. They were able to elegantly fit in contrastive learning to a conventional encoder / decoder  (image to text) transformer, achieving SOTA 91.0% top-1 accuracy on ImageNet with a finetuned encoder.
+
+This repository also chooses to adopt the specific transformer architecture from <a href="https://arxiv.org/abs/2204.02311">PaLM</a>, for both the unimodal and multimodal transformers as well as the cross attention blocks (parallel SwiGLU feedforwards)
 
 ## Install
 
@@ -99,5 +101,13 @@ text_embeds, image_embeds = coca(
   title   = {CoCa: Contrastive Captioners are Image-Text Foundation Models},
   author  = {Jiahui Yu and Zirui Wang and Vijay Vasudevan and Legg Yeung and Mojtaba Seyedhosseini and Yonghui Wu},
   year    = {2022}
+}
+```
+
+```bibtex
+@inproceedings{Chowdhery2022PaLMSL,
+    title   = {PaLM: Scaling Language Modeling with Pathways},
+    author  = {Aakanksha Chowdhery and Sharan Narang and Jacob Devlin and Maarten Bosma and Gaurav Mishra and Adam Roberts and Paul Barham and Hyung Won Chung and Charles Sutton and Sebastian Gehrmann and Parker Schuh and Kensen Shi and Sasha Tsvyashchenko and Joshua Maynez and Abhishek Rao and Parker Barnes and Yi Tay and Noam M. Shazeer and Vinodkumar Prabhakaran and Emily Reif and Nan Du and Benton C. Hutchinson and Reiner Pope and James Bradbury and Jacob Austin and Michael Isard and Guy Gur-Ari and Pengcheng Yin and Toju Duke and Anselm Levskaya and Sanjay Ghemawat and Sunipa Dev and Henryk Michalewski and Xavier Garc{\'i}a and Vedant Misra and Kevin Robinson and Liam Fedus and Denny Zhou and Daphne Ippolito and David Luan and Hyeontaek Lim and Barret Zoph and Alexander Spiridonov and Ryan Sepassi and David Dohan and Shivani Agrawal and Mark Omernick and Andrew M. Dai and Thanumalayan Sankaranarayana Pillai and Marie Pellat and Aitor Lewkowycz and Erica Oliveira Moreira and Rewon Child and Oleksandr Polozov and Katherine Lee and Zongwei Zhou and Xuezhi Wang and Brennan Saeta and Mark Diaz and Orhan Firat and Michele Catasta and Jason Wei and Kathleen S. Meier-Hellstern and Douglas Eck and Jeff Dean and Slav Petrov and Noah Fiedel},
+    year    = {2022}
 }
 ```
