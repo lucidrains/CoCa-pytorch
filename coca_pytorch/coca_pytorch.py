@@ -11,7 +11,7 @@ def exists(val):
 def default(val, d):
     return val if exists(val) else d
 
-# for controlling freezing during training of flamingo
+# for controlling freezing of parameters
 
 def set_module_requires_grad_(module, requires_grad):
     for param in module.parameters():
@@ -210,6 +210,7 @@ class CrossAttention(nn.Module):
         heads=8,
         parallel_ff=False,
         ff_mult=4,
+        norm_context=False
     ):
         super().__init__()
         self.heads = heads
@@ -218,6 +219,8 @@ class CrossAttention(nn.Module):
         context_dim = default(context_dim, dim)
 
         self.norm = LayerNorm(dim)
+        self.context_norm = LayerNorm(context_dim) if norm_context else nn.Identity()
+
         self.to_q = nn.Linear(dim, inner_dim, bias=False)
         self.to_kv = nn.Linear(context_dim, dim_head * 2, bias=False)
         self.to_out = nn.Linear(inner_dim, dim, bias=False)
@@ -234,6 +237,7 @@ class CrossAttention(nn.Module):
 
     def forward(self, x, context):
         x = self.norm(x)
+        context = self.context_norm(context)
 
         q = self.to_q(x)
         q = rearrange(q, 'b n (h d) -> b h n d', h = self.heads)
@@ -298,7 +302,7 @@ class CoCa(nn.Module):
         # attention pooling for image tokens
 
         self.img_queries = nn.Parameter(torch.randn(num_img_queries + 1, dim)) # num image queries for multimodal, but 1 extra CLS for contrastive learning
-        self.img_attn_pool = CrossAttention(dim=dim, context_dim=image_dim, dim_head=dim_head, heads=heads)
+        self.img_attn_pool = CrossAttention(dim=dim, context_dim=image_dim, dim_head=dim_head, heads=heads, norm_context=True)
 
         self.img_attn_pool_norm = LayerNorm(dim)
         self.text_cls_norm = LayerNorm(dim)

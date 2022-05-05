@@ -68,6 +68,7 @@ coca = CoCa(
 text = torch.randint(0, 20000, (4, 512)).cuda()
 images = torch.randn(4, 3, 256, 256).cuda()
 
+# train by giving CoCa your text and images with `return_loss = True`
 
 loss = coca(
     text = text,
