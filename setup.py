@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
   name = 'CoCa-pytorch',
   packages = find_packages(exclude=[]),
-  version = '0.0.3',
+  version = '0.0.4',
   license='MIT',
   description = 'CoCa, Contrastive Captioners are Image-Text Foundation Models - Pytorch',
   author = 'Phil Wang',
