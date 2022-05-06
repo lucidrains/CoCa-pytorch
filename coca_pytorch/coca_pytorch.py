@@ -236,24 +236,51 @@ class CrossAttention(nn.Module):
         ) if parallel_ff else None
 
     def forward(self, x, context):
+        """
+        einstein notation
+        b - batch
+        h - heads
+        n, i, j - sequence length (base sequence length, source, target)
+        d - feature dimension
+        """
+
+        # pre-layernorm, for queries and context
+
         x = self.norm(x)
         context = self.context_norm(context)
 
+        # get queries
+
         q = self.to_q(x)
         q = rearrange(q, 'b n (h d) -> b h n d', h = self.heads)
+
+        # scale
+
         q = q * self.scale
+
+        # get key / values
 
         k, v = self.to_kv(context).chunk(2, dim=-1)
 
+        # query / key similarity
+
         sim = einsum('b h i d, b j d -> b h i j', q, k)
+
+        # attention
 
         sim = sim - sim.amax(dim=-1, keepdim=True)
         attn = sim.softmax(dim=-1)
 
+        # aggregate
+
         out = einsum('b h i j, b j d -> b h i d', attn, v)
+
+        # merge and combine heads
 
         out = rearrange(out, 'b h n d -> b n (h d)')
         out = self.to_out(out)
+
+        # add parallel feedforward (for multimodal layers)
 
         if exists(self.ff):
             out = out + self.ff(x)
@@ -372,7 +399,7 @@ class CoCa(nn.Module):
 
         # attention pool image tokens
 
-        img_queries = repeat(self.img_queries, 'n d -> b n d', b = batch)
+        img_queries = repeat(self.img_queries, 'n d -> b n d', b=batch)
         img_queries = self.img_attn_pool(img_queries, image_tokens)
         img_queries = self.img_attn_pool_norm(img_queries)
 
@@ -380,19 +407,19 @@ class CoCa(nn.Module):
 
         # append text cls tokens
 
-        text_cls_tokens = repeat(self.text_cls_token, 'd -> b 1 d', b = batch)
-        text_tokens = torch.cat((text_tokens, text_cls_tokens), dim = -2)
+        text_cls_tokens = repeat(self.text_cls_token, 'd -> b 1 d', b=batch)
+        text_tokens = torch.cat((text_tokens, text_cls_tokens), dim=-2)
 
         # create specific mask for text cls token at the end
         # to prevent it from attending to padding
 
-        cls_mask = rearrange(text != self.pad_id, 'b j -> b 1 j')
-        attn_mask = F.pad(cls_mask, (0, 1, seq, 0), value = True)
+        cls_mask = rearrange(text!=self.pad_id, 'b j -> b 1 j')
+        attn_mask = F.pad(cls_mask, (0, 1, seq, 0), value=True)
 
         # go through unimodal layers
 
         for attn_ff in self.unimodal_layers:
-            text_tokens = attn_ff(text_tokens, attn_mask = attn_mask)
+            text_tokens = attn_ff(text_tokens, attn_mask=attn_mask)
 
         # get text cls token
 
@@ -422,14 +449,14 @@ class CoCa(nn.Module):
         # calculate caption loss (cross entropy loss)
 
         logits = rearrange(logits, 'b c n -> b n c')
-        caption_loss = ce(logits, labels, ignore_index = self.pad_id)
+        caption_loss = ce(logits, labels, ignore_index=self.pad_id)
         caption_loss = caption_loss * self.caption_loss_weight
 
         # calculate contrastive loss
 
         sim = einsum('i d, j d -> i j', text_embeds, image_embeds)
         sim = sim * self.temperature.exp()
-        contrastive_labels = torch.arange(batch, device = device)
+        contrastive_labels = torch.arange(batch, device=device)
 
         contrastive_loss = (ce(sim, contrastive_labels) + ce(sim.t(), contrastive_labels)) * 0.5
         contrastive_loss = contrastive_loss * self.contrastive_loss_weight
