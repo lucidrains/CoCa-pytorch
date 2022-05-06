@@ -309,6 +309,7 @@ class CoCa(nn.Module):
         pad_id=0
     ):
         super().__init__()
+        self.dim = dim
 
         self.pad_id = pad_id
         self.caption_loss_weight = caption_loss_weight
