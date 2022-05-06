@@ -366,44 +366,12 @@ class CoCa(nn.Module):
         self.to_logits[-1].weight = self.token_emb.weight
         nn.init.normal_(self.token_emb.weight, std=0.02)
     
-    def forward(
-        self,
-        text,
-        images=None,
-        image_embeds=None,
-        labels=None,
-        return_loss=False,
-        return_embeddings=False
-    ):
+    def embed_text(self, text):
         batch, device = text.shape[0], text.device
-
-        if return_loss and not exists(labels):
-            text, labels = text[:, :-1], text[:, 1:]
 
         seq = text.shape[1]
 
         text_tokens = self.token_emb(text)
-
-        assert not (exists(images) and exists(image_embeds))
-
-        # encode images into embeddings
-        # with the img_encoder passed in at init
-        # it can also accept precomputed image embeddings
-
-        if exists(images):
-            assert exists(self.img_encoder), 'img_encoder must be passed in for automatic image encoding'
-
-            self.img_encoder.eval()
-            with torch.no_grad():
-                image_tokens = self.img_encoder(images).detach()
-
-        # attention pool image tokens
-
-        img_queries = repeat(self.img_queries, 'n d -> b n d', b=batch)
-        img_queries = self.img_attn_pool(img_queries, image_tokens)
-        img_queries = self.img_attn_pool_norm(img_queries)
-
-        image_embeds, image_tokens = img_queries[:, 0], img_queries[:, 1:]
 
         # append text cls tokens
 
@@ -425,6 +393,47 @@ class CoCa(nn.Module):
 
         text_tokens, text_cls_tokens = text_tokens[:, :-1], text_tokens[:, -1]
         text_embeds = self.text_cls_norm(text_cls_tokens)
+        return text_embeds, text_tokens
+
+    def embed_image(self, images=None, image_tokens=None):
+        # encode images into embeddings
+        # with the img_encoder passed in at init
+        # it can also accept precomputed image tokens
+
+        assert not (exists(images) and exists(image_tokens))
+
+        if exists(images):
+            assert exists(self.img_encoder), 'img_encoder must be passed in for automatic image encoding'
+
+            self.img_encoder.eval()
+            with torch.no_grad():
+                image_tokens = self.img_encoder(images).detach()
+
+        # attention pool image tokens
+
+        img_queries = repeat(self.img_queries, 'n d -> b n d', b=image_tokens.shape[0])
+        img_queries = self.img_attn_pool(img_queries, image_tokens)
+        img_queries = self.img_attn_pool_norm(img_queries)
+
+        return img_queries[:, 0], img_queries[:, 1:]
+
+    def forward(
+        self,
+        text,
+        images=None,
+        image_tokens=None,
+        labels=None,
+        return_loss=False,
+        return_embeddings=False
+    ):
+        batch, device = text.shape[0], text.device
+
+        if return_loss and not exists(labels):
+            text, labels = text[:, :-1], text[:, 1:]
+
+        text_embeds, text_tokens = self.embed_text(text)
+
+        image_embeds, image_tokens = self.embed_image(images=images, image_tokens=image_tokens)
 
         # return embeddings if that is what the researcher wants
 
