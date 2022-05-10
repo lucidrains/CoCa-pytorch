@@ -458,7 +458,7 @@ class CoCa(nn.Module):
 
         # calculate caption loss (cross entropy loss)
 
-        logits = rearrange(logits, 'b c n -> b n c')
+        logits = rearrange(logits, 'b n c -> b c n')
         caption_loss = ce(logits, labels, ignore_index=self.pad_id)
         caption_loss = caption_loss * self.caption_loss_weight
 
