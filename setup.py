@@ -3,11 +3,12 @@ from setuptools import setup, find_packages
 setup(
   name = 'CoCa-pytorch',
   packages = find_packages(exclude=[]),
-  version = '0.0.5',
+  version = '0.0.6',
   license='MIT',
   description = 'CoCa, Contrastive Captioners are Image-Text Foundation Models - Pytorch',
   author = 'Phil Wang',
   author_email = 'lucidrains@gmail.com',
+  long_description_content_type = 'text/markdown',
   url = 'https://github.com/lucidrains/CoCa-pytorch',
   keywords = [
     'artificial intelligence',

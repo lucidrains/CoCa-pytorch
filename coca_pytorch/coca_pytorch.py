@@ -11,22 +11,6 @@ def exists(val):
 def default(val, d):
     return val if exists(val) else d
 
-# for controlling freezing of parameters
-
-def set_module_requires_grad_(module, requires_grad):
-    for param in module.parameters():
-        param.requires_grad = requires_grad
-
-def freeze_all_layers_(module):
-    set_module_requires_grad_(module, False)
-
-def unfreeze_all_layers_(module):
-    set_module_requires_grad_(module, True)
-
-def freeze_model_and_make_eval_(model):
-    model.eval()
-    freeze_all_layers_(model)
-
 # normalization
 # they use layernorm without bias, something that pytorch does not offer
 
@@ -324,9 +308,6 @@ class CoCa(nn.Module):
 
         self.img_encoder = img_encoder
 
-        if exists(self.img_encoder):
-            freeze_model_and_make_eval_(self.img_encoder)
-
         # attention pooling for image tokens
 
         self.img_queries = nn.Parameter(torch.randn(num_img_queries + 1, dim)) # num image queries for multimodal, but 1 extra CLS for contrastive learning
@@ -405,10 +386,7 @@ class CoCa(nn.Module):
 
         if exists(images):
             assert exists(self.img_encoder), 'img_encoder must be passed in for automatic image encoding'
-
-            self.img_encoder.eval()
-            with torch.no_grad():
-                image_tokens = self.img_encoder(images).detach()
+            image_tokens = self.img_encoder(images)
 
         # attention pool image tokens
 

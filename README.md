@@ -40,8 +40,6 @@ vit = ViT(
     mlp_dim = 2048
 )
 
-# do your vision transformer training
-
 vit = Extractor(vit, return_embeddings_only = True)
 
 # extractor will enable it so the vision transformer returns its embeddings
