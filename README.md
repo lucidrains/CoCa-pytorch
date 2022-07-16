@@ -17,7 +17,7 @@ $ pip install coca-pytorch
 First install the `vit-pytorch` for the image encoder, which needs to be pretrained
 
 ```bash
-$ pip install vit-pytorch
+$ pip install vit-pytorch>=0.35.8
 ```
 
 Then
@@ -40,7 +40,7 @@ vit = ViT(
     mlp_dim = 2048
 )
 
-vit = Extractor(vit, return_embeddings_only = True)
+vit = Extractor(vit, return_embeddings_only = True, detach = False)
 
 # extractor will enable it so the vision transformer returns its embeddings
 
