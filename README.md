@@ -17,7 +17,7 @@ $ pip install coca-pytorch
 First install the `vit-pytorch` for the image encoder, which needs to be pretrained
 
 ```bash
-$ pip install vit-pytorch>=0.35.8
+$ pip install vit-pytorch>=0.38.1
 ```
 
 Then
@@ -27,7 +27,7 @@ import torch
 
 # import vision transformer
 
-from vit_pytorch import ViT
+from vit_pytorch import SimpleViT
 from vit_pytorch.extractor import Extractor
 
 vit = ViT(
