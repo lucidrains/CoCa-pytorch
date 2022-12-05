@@ -35,6 +35,17 @@ class Residual(nn.Module):
     def forward(self, x, *args, **kwargs):
         return self.fn(x, *args, **kwargs) + x
 
+# to latents
+
+
+class EmbedToLatents(nn.Module):
+    def __init__(self, dim, dim_latents):
+        super().__init__()
+        self.to_latents = nn.Linear(dim, dim_latents, bias=False)
+
+    def forward(self, x):
+        latents = self.to_latents(x)
+        return F.normalize(latents, dim=-1)
 
 # rotary positional embedding
 # https://arxiv.org/abs/2104.09864
@@ -282,6 +293,7 @@ class CoCa(nn.Module):
         num_tokens,
         unimodal_depth,
         multimodal_depth,
+        dim_latents = None,
         image_dim = None,
         num_img_queries=256,
         dim_head=64,
@@ -315,6 +327,12 @@ class CoCa(nn.Module):
 
         self.img_attn_pool_norm = LayerNorm(dim)
         self.text_cls_norm = LayerNorm(dim)
+
+        # to latents
+
+        dim_latents = default(dim_latents, dim)
+        self.img_to_latents = EmbedToLatents(dim, dim_latents)
+        self.text_to_latents = EmbedToLatents(dim, dim_latents)
 
         # contrastive learning temperature
 
@@ -440,9 +458,14 @@ class CoCa(nn.Module):
         caption_loss = ce(logits, labels, ignore_index=self.pad_id)
         caption_loss = caption_loss * self.caption_loss_weight
 
+        # embedding to latents
+
+        text_latents = self.text_to_latents(text_embeds)
+        image_latents = self.img_to_latents(image_embeds)
+
         # calculate contrastive loss
 
-        sim = einsum('i d, j d -> i j', text_embeds, image_embeds)
+        sim = einsum('i d, j d -> i j', text_latents, image_latents)
         sim = sim * self.temperature.exp()
         contrastive_labels = torch.arange(batch, device=device)
 
