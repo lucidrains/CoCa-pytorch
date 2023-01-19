@@ -8,9 +8,6 @@ from einops import rearrange, repeat
 def exists(val):
     return val is not None
 
-def default(val, d):
-    return val if exists(val) else d
-
 # normalization
 # they use layernorm without bias, something that pytorch does not offer
 
