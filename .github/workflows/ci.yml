@@ -1,0 +1,50 @@
+name: Project CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+    - uses: actions/checkout@v3
+
+    - name: Build the Docker image
+      run: docker build ./CoCa_pytorch --file ./CoCa_pytorch/Dockerfile.app --tag my-image-name:$(date +%s)
+
+    - name: Build Documentation
+      run: sphinx-build -b html source/ _build
+
+    - name: Run Tests
+      run: pytest --cov
+
+    - name: Poetry Build
+      run: |
+      poetry build
+      poetry publish
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run linting
+        run: pylint src/main.py

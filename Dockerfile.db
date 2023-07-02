@@ -1,0 +1,8 @@
+FROM mysql:latest
+
+ENV MYSQL_ROOT_PASSWORD=password
+ENV MYSQL_DATABASE=coca_db
+ENV MYSQL_USER=coca_user
+ENV MYSQL_PASSWORD=coca_password
+
+EXPOSE 3306

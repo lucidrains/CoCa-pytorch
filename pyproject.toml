@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "coca-pytorch"
+version = "0.0.8"
+description = "CoCa, Contrastive Captioners are Image-Text Foundation Models - Pytorch"
+authors = ["Phil Wang <lucidrains@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "src"}]
+keywords = [
+    "artificial intelligence",
+    "deep learning",
+    "transformers",
+    "attention mechanism",
+    "contrastive learning",
+    "multimodal"
+    ]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pytest = "7.2.0"
+pytest-cov = "4.0.0"
+einops = "0.6"
+torch = "1.13.1"
+torchvision = "0.14.1"
+vit-pytorch = "0.40.2"
+sphinx = "5.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
