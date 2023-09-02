@@ -110,8 +110,8 @@ class ParallelTransformerBlock(nn.Module):
 
         # for caching causal mask and rotary embeddings
 
-        self.register_buffer("mask", None, persistent=False)
-        self.register_buffer("pos_emb", None, persistent=False)
+        self.mask = None
+        self.pos_emb = None
 
     def get_mask(self, n, device):
         if self.mask is not None and self.mask.shape[-1] >= n:
