@@ -1,6 +1,9 @@
 import torch
 from torch import einsum, nn
 import torch.nn.functional as F
+from torch.autograd import Function
+import torch.distributed as dist
+
 from einops import rearrange, repeat
 
 # helper functions
@@ -10,6 +13,57 @@ def exists(val):
 
 def default(val, d):
     return val if exists(val) else d
+
+# distributed
+
+def all_gather_variable_batch(t):
+    device, rank, world_size = t.device, dist.get_rank(), dist.get_world_size()
+
+    size = torch.tensor(t.shape[0], device = device, dtype = torch.long)
+    sizes = [torch.empty_like(size, device = device, dtype = torch.long) for i in range(world_size)]
+    dist.all_gather(sizes, size)
+
+    sizes = torch.stack(sizes)
+    max_size = sizes.amax().item()
+
+    padded_t = pad_dim_to(t, max_size, dim = 0)
+    gathered_tensors = [torch.empty_like(padded_t, device = device, dtype = padded_t.dtype) for i in range(world_size)]
+    dist.all_gather(gathered_tensors, padded_t)
+
+    gathered_tensor = torch.cat(gathered_tensors)
+    seq = torch.arange(max_size, device = device)
+
+    mask = rearrange(seq, 'j -> 1 j') < rearrange(sizes, 'i -> i 1')
+    mask = rearrange(mask, 'i j -> (i j)')
+
+    gathered_tensor = gathered_tensor[mask]
+    sizes = sizes.tolist()
+
+    return gathered_tensor, sizes
+
+class MaybeAllGather(Function):
+    @staticmethod
+    def forward(ctx, x):
+        is_distributed = dist.is_initialized() and dist.get_world_size() > 1
+        ctx.is_distributed = is_distributed
+
+        if not is_distributed:
+            return x
+
+        x, batch_sizes = all_gather_variable_batch(x)
+        ctx.batch_sizes = batch_sizes
+        return x
+
+    @staticmethod
+    def backward(ctx, grads):
+        if not ctx.is_distributed:
+            return grads
+
+        batch_sizes, rank = ctx.batch_sizes, dist.get_rank()
+        grads_by_rank = grads.split(batch_sizes, dim = 0)
+        return grads_by_rank[rank]
+
+maybe_all_gather = MaybeAllGather.apply
 
 # normalization
 # they use layernorm without bias, something that pytorch does not offer
@@ -462,6 +516,11 @@ class CoCa(nn.Module):
 
         text_latents = self.text_to_latents(text_embeds)
         image_latents = self.img_to_latents(image_embeds)
+
+        # maybe distributed all gather
+
+        text_latents = maybe_all_gather(text_latents)
+        image_latents = maybe_all_gather(image_latents)
 
         # calculate contrastive loss
 
