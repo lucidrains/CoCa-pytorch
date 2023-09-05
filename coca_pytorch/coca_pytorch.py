@@ -44,21 +44,13 @@ def all_gather_variable_batch(t):
 class MaybeAllGather(Function):
     @staticmethod
     def forward(ctx, x):
-        is_distributed = dist.is_initialized() and dist.get_world_size() > 1
-        ctx.is_distributed = is_distributed
-
-        if not is_distributed:
-            return x
-
+        assert dist.is_initialized() and dist.get_world_size() > 1
         x, batch_sizes = all_gather_variable_batch(x)
         ctx.batch_sizes = batch_sizes
         return x
 
     @staticmethod
     def backward(ctx, grads):
-        if not ctx.is_distributed:
-            return grads
-
         batch_sizes, rank = ctx.batch_sizes, dist.get_rank()
         grads_by_rank = grads.split(batch_sizes, dim = 0)
         return grads_by_rank[rank]
@@ -419,7 +411,10 @@ class CoCa(nn.Module):
         # they used embedding weight tied projection out to logits, not common, but works
         self.to_logits[-1].weight = self.token_emb.weight
         nn.init.normal_(self.token_emb.weight, std=0.02)
-    
+
+        # whether in data parallel setting
+        self.is_distributed = dist.is_initialized() and dist.get_world_size() > 1
+
     def embed_text(self, text):
         batch, device = text.shape[0], text.device
 
@@ -519,8 +514,10 @@ class CoCa(nn.Module):
 
         # maybe distributed all gather
 
-        text_latents = maybe_all_gather(text_latents)
-        image_latents = maybe_all_gather(image_latents)
+        if self.is_distributed:
+            latents = torch.stack((text_latents, image_latents), dim = 1)
+            latents = maybe_all_gather(latents)
+            text_latents, image_latents = latents.unbind(dim = 1)
 
         # calculate contrastive loss
 
