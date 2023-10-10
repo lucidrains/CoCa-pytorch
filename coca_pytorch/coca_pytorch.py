@@ -16,6 +16,11 @@ def default(val, d):
 
 # distributed
 
+def pad_dim_to(t, length, dim = 0):
+    pad_length = length - t.shape[dim]
+    zero_pairs = (-dim - 1) if dim < 0 else (t.ndim - dim - 1)
+    return F.pad(t, (*((0, 0) * zero_pairs), 0, pad_length))
+
 def all_gather_variable_batch(t):
     device, rank, world_size = t.device, dist.get_rank(), dist.get_world_size()
 
