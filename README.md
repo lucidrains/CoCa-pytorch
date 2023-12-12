@@ -6,6 +6,8 @@ Implementation of <a href="https://arxiv.org/abs/2205.01917">CoCa, Contrastive C
 
 This repository also chooses to adopt the specific transformer architecture from <a href="https://arxiv.org/abs/2204.02311">PaLM</a>, for both the unimodal and multimodal transformers as well as the cross attention blocks (parallel SwiGLU feedforwards)
 
+Update: CoCa has been trained by the good folks over at <a href="https://github.com/mlfoundations/open_clip#fine-tuning-coca">OpenClip</a>
+
 ## Install
 
 ```bash
